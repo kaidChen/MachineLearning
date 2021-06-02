@@ -35,7 +35,7 @@ class Node:
         return "{%s {%s}}" % (self.attribute, children)
 
 
-def TreeGenerate(dataset, attribute_set, label_tag="好瓜"):
+def TreeGenerate(dataset, attribute_set, attr_value_map, label_tag="好瓜"):
     labels = np.unique(dataset[label_tag])
     if len(labels) == 1:
         # 样本全部属于同一类别
@@ -45,21 +45,21 @@ def TreeGenerate(dataset, attribute_set, label_tag="好瓜"):
         most = Counter(dataset[label_tag]).most_common()[0][0]
         return Node(most)
     # 选择最优划分
-    tag, gain = '', 0
-    for attribute in attribute_set:
-        tmp = Gain(dataset, attribute)
+    attribute, gain = '', 0
+    for a in attribute_set:
+        tmp = Gain(dataset, a)
         if gain < tmp:
-            tag, gain = attribute, tmp
-    node = Node(tag)
-    for v in np.unique(dataset[tag]):
-        subset = dataset[dataset[tag] == v]
+            attribute, gain = a, tmp
+    node = Node(attribute)
+    for v in attr_value_map[attribute]:
+        subset = dataset[dataset[attribute] == v]
         if len(subset) == 0:
             most = Counter(dataset[label_tag]).most_common()[0][0]
             node.children[v] = Node(most)
         else:
-            attribute_set.remove(tag)
-            node.children[v] = TreeGenerate(subset, attribute_set)
-            attribute_set.add(tag)
+            attribute_set.remove(attribute)
+            node.children[v] = TreeGenerate(subset, attribute_set, attr_value_map)
+            attribute_set.add(attribute)
     return node
 
 
@@ -74,5 +74,8 @@ if __name__ == '__main__':
         "好瓜": ["是" for _ in range(8)] + ["否" for _ in range(9)]
     })
 
-    node = TreeGenerate(dataset, {"色泽", "根蒂", "敲声", "纹理", "脐部", "触感"})
+    # 为了防止后面出现v不够的情况，比如在后面学习的时候数据集中没有"浅白"，导致少了一个分支
+    attr_value_map = {k: np.unique(dataset[k]) for k in dataset.columns[:-1]}
+
+    node = TreeGenerate(dataset, set(dataset.columns[:-1]), attr_value_map)
     print(node)
