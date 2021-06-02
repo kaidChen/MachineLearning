@@ -36,15 +36,11 @@ class Node:
 
 
 def TreeGenerate(dataset, attribute_set, attr_value_map, label_tag="好瓜"):
-    labels = np.unique(dataset[label_tag])
-    if len(labels) == 1:
-        # 样本全部属于同一类别
-        return Node(labels[0])
-    if len(attribute_set) == 0:
-        # 当前属性集为空
+    if len(np.unique(dataset[label_tag])) == 1 or len(attribute_set) == 0:
+        # 样本全部属于同一类别 或 当前属性集为空
         most = Counter(dataset[label_tag]).most_common()[0][0]
         return Node(most)
-    # 选择最优划分
+    # 根据信息增益选择最优划分
     attribute, gain = '', 0
     for a in attribute_set:
         tmp = Gain(dataset, a)
